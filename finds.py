@@ -155,6 +155,51 @@ print(level_2)
 
 # print(soup.find_all('class', id='gsc_a_t')[0].text)
 
+#%% 2021.02.17.
+from urllib.request import urlopen
+from bs4 import BeautifulSoup
+
+url = "https://scholar.google.com/citations?hl=en&user=BcXQsQ0AAAAJ&view_op=list_works&sortby=pubdate"
+page = urlopen(url)
+soup = BeautifulSoup(page, 'html.parser')
+
+# url 페이지 제목 확인
+print(soup.find('title'))
+
+level_0 = soup.find('tbody', id='gsc_a_b')
+
+#%% 피인용수 크롤
+
+cita_tmp = level_0.find_all('td', class_='gsc_a_c')
+print(len(cita_tmp))
+cita = []
+
+for i in range(0, 20, 1):
+    num = cita_tmp[i].find('a').text
+    if num == "": num = 0 # 피인용수가 ""이면, 0으로 바꾼다.
+    cita.append(num)
+    # cita.append(cita_tmp[i].find('a').text)
+    
+print(cita)
+
+"""
+['', '', '', '', '', '', '', '2', '', '', '', '2', '', '1', '', '', '', '10', '1', '']
+''는 현재 피인용수가 없다는 말임. Year 순으로 정렬해놔서 안잡힌거지, 코드가 틀린게 아니었다...
+''를 '0'으로 바꾸자.
+"""
+
+#%% 발행년도 크롤
+yr_tmp = level_0.find_all('td', class_='gsc_a_y')
+pubyear = []
+
+for i in range(0, 20, 1):
+    num = yr_tmp[i].find('span').text
+    pubyear.append(num)
+    
+print(pubyear)
+
+
+
 #%% 엑셀로 데이터 정리.
 import pandas as pd
 
@@ -172,7 +217,7 @@ dat.to_excel("stock.xlsx", index=False)
 # csv a, b, c
 dat.to_csv("stock.csv", index=False, encoding='ms949')
 
-#%% 데이터 종합하기 : publish paper 제목, 저자, 저널명, 페이지, 발행년도, (피인용수)
+#%% 데이터 종합하기 : publish paper 제목, 저자, 저널명, (페이지), 피인용수, 발행년도 [21.02.17.]
 from urllib.request import urlopen
 from bs4 import BeautifulSoup
 
@@ -188,19 +233,23 @@ tit = [] # Title
 auth = [] # Author
 pubname = [] # Journal
 # pubpage = [] # Pages
-# pubyear = [] # Year
-# cita = [] # Citation
+cita = [] # Citation
+pubyear = [] # Year
+
 
 dict = {"Title" : tit,
         "Author" : auth,
-        "Journal" : pubname}
+        "Journal" : pubname,
+        "Cited By" : cita,
+        "Year" : pubyear}
         # "Pages" : pubpage,
-        # "Year" : pubyear,
         # "Citation" : cita
 
 # Preprocessing
 level_0 = soup.find('tbody', id='gsc_a_b')
 tit_tmp = level_0.find_all('td', class_='gsc_a_t')
+cita_tmp = level_0.find_all('td', class_='gsc_a_c')
+yr_tmp = level_0.find_all('td', class_='gsc_a_y')
 
 
 for i in range(0, 20, 1):
@@ -211,7 +260,30 @@ for i in range(0, 20, 1):
     temp_jons = jons.split(',') # split info to ','
     pubname.append(temp_jons[0]) # (3) Get Journal name
     
-    """
+    cita.append(cita_tmp[i].find('a').text) # (4) Get Cited By
+    pubyear.append(yr_tmp[i].find('span').text) # (5) Get Published Year   
+    
+    
+    # pubpage.append(temp_jons[1].lstrip()) # (4) Get pages
+
+import pandas as pd
+# import openpyxl
+# 'openpyxl' imported but unused
+
+df = pd.DataFrame(dict)
+
+# 엑셀로 만들고 싶다.
+# 집에서 실행할 구문
+# df.to_excel('C:/Users/SIMHYUNCHAE/Documents/GitHub/meta_bcblpap/gsc1-20.xlsx', index=False)
+
+# 랩에서 실행할 구문
+df.to_excel('C:/Users/BCBL2/Documents/GitHub/meta_bcblpap/gsc1-20.xlsx', index=False)
+
+# to csv a, b, c
+# dat.to_csv("stock.csv", index=False, encoding='ms949')
+
+"""
+21.02.16.
     title 항목에서는 수록 페이지 수와 발행년도가 미확인 되는 경우가 생김.
     [11]논문: div class="gs_gray" 태그 내용: 2개.(페이지 없음)
     저널이름은 pubname에 append되는데 문제 없음. 페이지 정보가 없으므로 pubpage에 발행년도 2020이 append됨.
@@ -220,27 +292,14 @@ for i in range(0, 20, 1):
     
     수록 페이지 수는 어디서 크롤링 하면 될까? 없으면 패스하도록 개선해야.
     발행년도는 Title(class_='gsc_a_t)이 아닌 year(class_='gsc_a_y')에서 크롤링하면 된다.
-    """
-    # pubpage.append(temp_jons[1].lstrip()) # (4) Get pages
-    # pubyear.append(temp_jons[2].lstrip()) # (5) Get publication year
+
+21.02.17.
+    - 피인용수(td class='gsc_a_c') 추가
+    - 발행년도(td class='gsc_a_y') 추가
     
-    
-# print(tit)
-# print(auth)
-# print(pubname)
-# print(pubpage)
-# print(pubyear)
-
-import pandas as pd
-# import openpyxl
-# 'openpyxl' imported but unused
-
-df = pd.DataFrame(dict)
-# print(dat)
-
-# 엑셀로 만들고 싶다.
-df.to_excel('C:/Users/SIMHYUNCHAE/Documents/GitHub/meta_bcblpap/gsc1-20.xlsx', index=False)
-
-# to csv a, b, c
-# dat.to_csv("stock.csv", index=False, encoding='ms949')
-
+    To Do
+    - 년도, 인용수 순으로 정렬하는 기능
+    - 1-20 개 까지가 아닌 더보기 눌러서 크롤하는 기능
+    - 타이틀 누르면 나오는 새 창에서 정보 얻
+                
+"""
