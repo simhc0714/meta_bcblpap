@@ -303,3 +303,14 @@ df.to_excel('C:/Users/BCBL2/Documents/GitHub/meta_bcblpap/gsc1-20.xlsx', index=F
     - 타이틀 누르면 나오는 새 창에서 정보 얻
                 
 """
+
+#%% 페이지 로드 하여 정보 가져오기
+"""
+beautifulsoup는 추가되는 내용 가져오기가 어렵기 때문에 Selenium으로 페이지 뷰 로드하기 function을 사용함.
+
+pip install selenium
+
+chromedriver 사용을 위하여 chromedriver 를 다운로드 한다. 버전과 OS 선택.
+
+"""
+
